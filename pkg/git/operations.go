@@ -2,6 +2,7 @@ package git
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -50,7 +51,11 @@ func CommonGitDir() (string, error) {
 func GitCommand(gitDir string, args ...string) (string, error) {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = gitDir
-	output, err := cmd.Output()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		err = fmt.Errorf("git %s failed: %w\n%s",
+			strings.Join(args, " "), err, output)
+	}
 	return strings.TrimSpace(string(output)), err
 }
 
