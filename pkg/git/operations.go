@@ -8,6 +8,10 @@ import (
 	"strings"
 )
 
+// Trace can be set on to trace git commands.
+// Alternatively, TOPIC_TRACE can be set in the environment.
+var Trace bool
+
 // GitDir finds a git directory from the current working directory.
 // In a worktree, this will actually find .git/worktrees/[name] in the
 // real git directory. This is desirable because it applies per-worktree
@@ -51,6 +55,11 @@ func CommonGitDir() (string, error) {
 func GitCommand(gitDir string, args ...string) (string, error) {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = gitDir
+
+	if Trace || os.Getenv("TOPIC_TRACE") != "" {
+		fmt.Fprintf(os.Stderr, "+ git %s\n", strings.Join(args, " "))
+	}
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("git %s failed: %w\n%s",
@@ -64,6 +73,11 @@ func GitCommand(gitDir string, args ...string) (string, error) {
 func GitRun(gitDir string, args ...string) error {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = gitDir
+
+	if Trace || os.Getenv("TOPIC_TRACE") != "" {
+		fmt.Fprintf(os.Stderr, "+ git %s\n", strings.Join(args, " "))
+	}
+
 	return cmd.Run()
 }
 
