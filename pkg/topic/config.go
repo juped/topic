@@ -32,6 +32,8 @@ type Config struct {
 	SyncBranch string
 	// The remote to sync to. Defaults to "origin" if not set.
 	SyncRemote string
+	// Whether to trace git commands. Defaults to false if not set.
+	Trace bool
 }
 
 func LoadConfig() (*Config, error) {
@@ -80,6 +82,11 @@ func LoadConfig() (*Config, error) {
 			}
 			config.BaseBranch = name
 		}
+	}
+
+	if section.HasKey("trace") {
+		config.Trace = section.Key("trace").MustBool(false)
+		git.Trace = config.Trace
 	}
 
 	return config, nil
