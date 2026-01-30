@@ -15,7 +15,7 @@ import (
 var createCmd = &cobra.Command{
 	Use:   "create [topic name]",
 	Short: "Create a topic",
-	Long:  ``,
+	Long:  `Create a topic at the current base point, optionally with dependencies.`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := topicCreate(cmd, args); err != nil {
@@ -33,7 +33,7 @@ func init() {
 		&dependencies,
 		"depends", "d",
 		[]string{},
-		`The name of a topic branch this topic depends on.
+		`The name of another topic this topic depends on.
 (Can be repeated for multiple dependencies.)`)
 }
 

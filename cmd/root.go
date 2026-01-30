@@ -11,7 +11,11 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "topic",
 	Short: "Manage git topics",
-	Long:  ``,
+	Long: `Manage git topics.
+
+This tool primarily orchestrates git commands; you can see what it's invoking
+by setting the TOPIC_TRACE environment variable. (But there are usually more
+compact commands available to you, as a user rather than an automated tool.)`,
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 		os.Exit(0)
@@ -21,7 +25,7 @@ var rootCmd = &cobra.Command{
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version of this tool",
-	Long:  ``,
+	Long:  `Print the version of this tool.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if info, ok := debug.ReadBuildInfo(); ok {
 			fmt.Println(info.Main.Version)
