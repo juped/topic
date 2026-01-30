@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"topic/pkg/git"
-	"topic/pkg/topic"
+
+	"go.topic.tools/topic/pkg/git"
+	"go.topic.tools/topic/pkg/topic"
 
 	"github.com/spf13/cobra"
 )

@@ -5,7 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"topic/pkg/git"
+
+	"go.topic.tools/topic/pkg/git"
 
 	"github.com/AlecAivazis/survey/v2"
 	"gopkg.in/ini.v1"

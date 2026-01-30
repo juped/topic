@@ -1,4 +1,4 @@
-module topic
+module go.topic.tools/topic
 
 go 1.25.6
 
