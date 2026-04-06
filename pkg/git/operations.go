@@ -106,7 +106,7 @@ func RemoteExists(gitDir string, remote string) bool {
 
 // BranchExists checks if a branch exists.
 func BranchExists(gitDir string, branch string) bool {
-	return GitRun("rev-parse", "--verify", branch) == nil
+	return GitRun(gitDir, "rev-parse", "--verify", branch) == nil
 }
 
 // RemoteDefaultBranch gets a default branch name from a remote.
