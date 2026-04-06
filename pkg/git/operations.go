@@ -68,6 +68,24 @@ func GitCommand(gitDir string, args ...string) (string, error) {
 	return strings.TrimSpace(string(output)), err
 }
 
+// GitPipe runs a git command with input on stdin, returning stdout.
+func GitPipe(gitDir string, input string, args ...string) (string, error) {
+	cmd := exec.Command("git", args...)
+	cmd.Dir = gitDir
+	cmd.Stdin = strings.NewReader(input)
+
+	if Trace || os.Getenv("TOPIC_TRACE") != "" {
+		fmt.Fprintf(os.Stderr, "+ git %s\n", strings.Join(args, " "))
+	}
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		err = fmt.Errorf("git %s failed: %w\n%s",
+			strings.Join(args, " "), err, output)
+	}
+	return strings.TrimSpace(string(output)), err
+}
+
 // GitRun runs a git command, given a git directory and args,
 // ignoring its output aside from exit status.
 func GitRun(gitDir string, args ...string) error {
