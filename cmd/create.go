@@ -106,7 +106,7 @@ func octopusMergeDependencies(gitDir string, basePoint string,
 
 		commitTreeArgs := []string{"commit-tree", tree, "-m", "temporary"}
 		for _, parent := range parents {
-			commitTreeArgs = append(commitTreeArgs, "-p", parent)
+			commitTreeArgs = append(commitTreeArgs, "-p", parent+"^{commit}")
 		}
 		commit, err := git.GitCommand(gitDir, commitTreeArgs...)
 		if err != nil {
@@ -117,7 +117,7 @@ func octopusMergeDependencies(gitDir string, basePoint string,
 
 	commitTreeArgs := []string{"commit-tree", accumulator + "^{tree}"}
 	for _, parent := range parents {
-		commitTreeArgs = append(commitTreeArgs, "-p", parent)
+		commitTreeArgs = append(commitTreeArgs, "-p", parent+"^{commit}")
 	}
 	// todo: use fmt-merge-msg to have git generate this?
 	mergeMessage := fmt.Sprintf("Merge dependencies %s",
