@@ -116,13 +116,15 @@ func octopusMergeDependencies(gitDir string, basePoint string,
 		accumulator = commit
 	}
 
+	mergeMessage, err := fmtMergeMsg(gitDir, dependencies)
+	if err != nil {
+		return "", err
+	}
+
 	commitTreeArgs := []string{"commit-tree", accumulator + "^{tree}"}
 	for _, parent := range parents {
 		commitTreeArgs = append(commitTreeArgs, "-p", parent+"^{commit}")
 	}
-	// todo: use fmt-merge-msg to have git generate this?
-	mergeMessage := fmt.Sprintf("Merge dependencies %s",
-		strings.Join(dependencies, ", "))
 	commitTreeArgs = append(commitTreeArgs, "-m", mergeMessage)
 
 	commit, err := git.GitCommand(gitDir, commitTreeArgs...)
@@ -131,4 +133,27 @@ func octopusMergeDependencies(gitDir string, basePoint string,
 	}
 
 	return commit, nil
+}
+
+func fmtMergeMsg(gitDir string, dependencies []string) (string, error) {
+	var fetchHeadLines []string
+	for _, dep := range dependencies {
+		sha, err := git.GitCommand(gitDir, "rev-parse", dep)
+		if err != nil {
+			return "", err
+		}
+		fetchHeadLines = append(fetchHeadLines, sha+"\t\tbranch '"+dep+"'")
+	}
+	fetchHead := strings.Join(fetchHeadLines, "\n") + "\n"
+
+	msg, err := git.GitPipe(gitDir, fetchHead, "fmt-merge-msg")
+	if err != nil {
+		return "", err
+	}
+
+	// Rename the subject line: "branches"/"branch" -> "dependencies"/"dependency"
+	lines := strings.SplitN(msg, "\n", 2)
+	lines[0] = strings.Replace(lines[0], "branches", "dependencies", 1)
+	lines[0] = strings.Replace(lines[0], "branch", "dependency", 1)
+	return strings.Join(lines, "\n"), nil
 }
