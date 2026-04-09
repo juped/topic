@@ -44,6 +44,13 @@ func resetDependencies(t *testing.T) {
 	t.Cleanup(func() { dependencies = []string{} })
 }
 
+// resetBugfixRev clears the global bugfixRev flag before and after a test.
+func resetBugfixRev(t *testing.T) {
+	t.Helper()
+	bugfixRev = ""
+	t.Cleanup(func() { bugfixRev = "" })
+}
+
 func TestFmtMergeMsg(t *testing.T) {
 	dir := testutil.SetupRepo(t)
 	createBranch(t, dir, "dep-a", "a.txt")
@@ -125,6 +132,54 @@ func TestTopicCreate_OneDep(t *testing.T) {
 	}
 	if depSHA != featureSHA {
 		t.Error("my-feature should point to the same commit as dep-a")
+	}
+}
+
+func TestTopicCreate_Bugfix(t *testing.T) {
+	dir := testutil.SetupRepo(t)
+	writeTopicConfig(t, dir)
+	t.Chdir(dir)
+	resetDependencies(t)
+	resetBugfixRev(t)
+
+	// Grab the current HEAD commit to use as the bugfix rev.
+	gitDir := filepath.Join(dir, ".git")
+	headSHA, err := git.GitCommand(gitDir, "rev-parse", "HEAD")
+	if err != nil {
+		t.Fatalf("rev-parse HEAD: %v", err)
+	}
+
+	rootCmd.SetArgs([]string{"create", "my-bugfix", "--bugfix", headSHA})
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("create --bugfix: %v", err)
+	}
+
+	branchSHA, err := git.GitCommand(gitDir, "rev-parse", "my-bugfix")
+	if err != nil {
+		t.Error("branch my-bugfix should exist after create --bugfix")
+	}
+	if branchSHA != headSHA {
+		t.Errorf("my-bugfix should point to %s, got %s", headSHA, branchSHA)
+	}
+}
+
+func TestTopicCreate_BugfixWithDepsDisallowed(t *testing.T) {
+	dir := testutil.SetupRepo(t)
+	writeTopicConfig(t, dir)
+	createBranch(t, dir, "dep-a", "a.txt")
+	t.Chdir(dir)
+	resetDependencies(t)
+	resetBugfixRev(t)
+
+	gitDir := filepath.Join(dir, ".git")
+	headSHA, err := git.GitCommand(gitDir, "rev-parse", "HEAD")
+	if err != nil {
+		t.Fatalf("rev-parse HEAD: %v", err)
+	}
+
+	rootCmd.SetArgs([]string{"create", "my-bugfix", "--bugfix", headSHA, "--depends", "dep-a"})
+	if err := rootCmd.Execute(); err == nil {
+		t.Fatal("expected error when combining --bugfix and --depends")
 	}
 }
 
