@@ -56,13 +56,10 @@ func LoadConfig() (*Config, error) {
 
 	section := cfgIni.Section("topic")
 
+	config.SyncRemote = section.Key("syncRemote").MustString("origin")
 	syncRemoteExists := git.RemoteExists(gitDir, config.SyncRemote)
 	config.Sync = section.Key("sync").MustBool(syncRemoteExists)
-
-	if config.Sync {
-		config.SyncRemote = section.Key("syncRemote").MustString("origin")
-		config.SyncBranch = section.Key("syncBranch").MustString("_topic-metadata")
-	}
+	config.SyncBranch = section.Key("syncBranch").MustString("_topic-metadata")
 
 	if section.HasKey("baseBranch") {
 		config.BaseBranch = section.Key("baseBranch").MustString("")
