@@ -26,9 +26,16 @@ var createCmd = &cobra.Command{
 }
 
 var dependencies []string
+var bugfixRev string
 
 func init() {
 	rootCmd.AddCommand(createCmd)
+	createCmd.Flags().StringVarP(
+		&bugfixRev,
+		"bugfix", "b",
+		"",
+		`A rev identifying the commit that introduced the bug.
+The new topic will be based directly on it. Disallows -d.`)
 	createCmd.Flags().StringArrayVarP(
 		&dependencies,
 		"depends", "d",
@@ -38,6 +45,10 @@ func init() {
 }
 
 func topicCreate(cmd *cobra.Command, args []string) error {
+	if bugfixRev != "" && len(dependencies) > 0 {
+		return errors.New("--bugfix and --depends are mutually exclusive")
+	}
+
 	config, err := topic.LoadConfig()
 	if err != nil {
 		return err
@@ -50,6 +61,15 @@ func topicCreate(cmd *cobra.Command, args []string) error {
 	gitDir, err := git.GitDir()
 	if err != nil {
 		return err
+	}
+
+	if bugfixRev != "" {
+		err = git.GitRun(gitDir, "branch", args[0], bugfixRev)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("created bugfix topic branch %s based on %s\n", args[0], bugfixRev)
+		return nil
 	}
 
 	basePoint, err := git.ReleaseTag(gitDir, config.BaseBranch)
