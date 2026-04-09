@@ -1,3 +1,0 @@
-#+TITLE: topic
-
-This tool manages Git topics.
