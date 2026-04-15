@@ -28,9 +28,10 @@ type Config struct {
 	BaseBranch string
 	// Whether to sync to a remote. Defaults to true if SyncRemote exists.
 	Sync bool
-	// The metadata branch to push our metadata to on the remote.
+	// The metadata branch to store metadata in and push to the remote if
+	// syncing.
 	// Defaults to "_topic-metadata" if not set.
-	SyncBranch string
+	MetadataBranch string
 	// The remote to sync to. Defaults to "origin" if not set.
 	SyncRemote string
 	// Whether to trace git commands. Defaults to false if not set.
@@ -59,7 +60,8 @@ func LoadConfig() (*Config, error) {
 	config.SyncRemote = section.Key("syncRemote").MustString("origin")
 	syncRemoteExists := git.RemoteExists(gitDir, config.SyncRemote)
 	config.Sync = section.Key("sync").MustBool(syncRemoteExists)
-	config.SyncBranch = section.Key("syncBranch").MustString("_topic-metadata")
+	config.MetadataBranch = section.Key("metadataBranch").MustString(
+		"_topic-metadata")
 
 	if section.HasKey("baseBranch") {
 		config.BaseBranch = section.Key("baseBranch").MustString("")
@@ -120,7 +122,7 @@ func createDefaultConfig(config *Config, gitDir string, configPath string) (*Con
 			Message: "Which branch should this tool use to sync metadata?",
 			Default: "_topic-metadata",
 		}
-		survey.AskOne(prompt, &config.SyncBranch)
+		survey.AskOne(prompt, &config.MetadataBranch)
 
 		baseBranch, err := git.RemoteDefaultBranch(gitDir, config.SyncRemote)
 		if err != nil {
@@ -163,8 +165,8 @@ func saveConfig(config *Config, configPath string) error {
 	if config.SyncRemote != "" {
 		section.Key("syncRemote").SetValue(config.SyncRemote)
 	}
-	if config.SyncBranch != "" {
-		section.Key("syncBranch").SetValue(config.SyncBranch)
+	if config.MetadataBranch != "" {
+		section.Key("metadataBranch").SetValue(config.MetadataBranch)
 	}
 
 	return iniCfg.SaveTo(configPath)
