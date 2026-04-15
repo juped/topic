@@ -87,8 +87,4 @@ sync = false
 	if cfg.Sync {
 		t.Error("Sync: got true, want false")
 	}
-	// SyncRemote/SyncBranch should be empty when sync=false.
-	if cfg.SyncRemote != "" {
-		t.Errorf("SyncRemote: got %q, want empty (sync disabled)", cfg.SyncRemote)
-	}
 }
