@@ -1,6 +1,7 @@
 package topic
 
 import (
+	"errors"
 	"time"
 
 	"go.topic.tools/topic/pkg/git"
@@ -124,5 +125,116 @@ func WriteMetadata(config *Config, metadata *MetadataFile) error {
 		return err
 	}
 
+	return nil
+}
+
+func AppendTopic(config *Config, name string, hash string,
+	author string, dependencies []string) error {
+	topicMetadata := TopicMetadata{
+		Name:         name,
+		Hash:         hash,
+		Author:       author,
+		Revision:     1,
+		Previous:     []string{},
+		Dependencies: dependencies,
+	}
+
+	metadata, err := LoadMetadata(config)
+	if err != nil {
+		return err
+	}
+
+	metadata.Topics = append(metadata.Topics, topicMetadata)
+	return WriteMetadata(config, metadata)
+}
+
+// todo: author updates maybe?
+// todo: dependencies should be able to change
+func UpdateTopic(config *Config, name string, hash string) error {
+	metadata, err := LoadMetadata(config)
+	if err != nil {
+		return err
+	}
+
+	topicMetadata := GetTopicByName(metadata, name)
+	if topicMetadata == nil {
+		// todo: fall back on append?
+		return errors.New("can't update a topic that doesn't exist")
+	}
+
+	topicMetadata.Previous = append(topicMetadata.Previous, topicMetadata.Hash)
+	topicMetadata.Hash = hash
+	topicMetadata.Revision += 1
+
+	return WriteMetadata(config, metadata)
+}
+
+func AppendReconciliation(config *Config,
+	reconciliationMetadata ReconciliationMetadata) error {
+	metadata, err := LoadMetadata(config)
+	if err != nil {
+		return err
+	}
+
+	metadata.Reconciliations = append(metadata.Reconciliations,
+		reconciliationMetadata)
+
+	return WriteMetadata(config, metadata)
+}
+
+func GetTopicByName(metadata *MetadataFile, name string) *TopicMetadata {
+	for i := range metadata.Topics {
+		if metadata.Topics[i].Name == name {
+			return &metadata.Topics[i]
+		}
+	}
+	return nil
+}
+
+func GetTopicByHash(metadata *MetadataFile, hash string) *TopicMetadata {
+	for i := range metadata.Topics {
+		if metadata.Topics[i].Hash == hash {
+			// todo: we expect exactly one, figure out if that's right
+			return &metadata.Topics[i]
+		}
+	}
+	return nil
+}
+
+func GetReconciliationForHashPair(metadata *MetadataFile, hash1 string,
+	hash2 string) *ReconciliationMetadata {
+	for _, r := range metadata.Reconciliations {
+		if r.FirstTopicHash == hash1 {
+			if r.SecondTopicHash == hash2 {
+				return &r
+			}
+		} else if r.SecondTopicHash == hash1 {
+			if r.FirstTopicHash == hash2 {
+				return &r
+			}
+		}
+	}
+	return nil
+}
+
+func GetLatestReconciliation(metadata *MetadataFile, topic1 string,
+	topic2 string) *ReconciliationMetadata {
+	recs := []*ReconciliationMetadata{}
+
+	for _, r := range metadata.Reconciliations {
+		if r.FirstTopic == topic1 {
+			if r.SecondTopic == topic2 {
+				recs = append(recs, &r)
+			}
+		} else if r.SecondTopic == topic1 {
+			if r.FirstTopic == topic2 {
+				recs = append(recs, &r)
+			}
+		}
+	}
+
+	if len(recs) > 0 {
+		return recs[len(recs)-1]
+	}
 	return nil
 }
