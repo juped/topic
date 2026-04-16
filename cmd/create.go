@@ -63,13 +63,34 @@ func topicCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	metadata, err := topic.LoadMetadata(config)
+	if err != nil {
+		return err
+	}
+
+	if topic.GetTopicByName(metadata, args[0]) != nil {
+		return errors.New("topic already exists")
+	}
+
+	// todo: factor this out
+	authorName, err := git.GitCommand(gitDir, "config", "user.name")
+	if err != nil {
+		return err
+	}
+	authorEmail, err := git.GitCommand(gitDir, "config", "user.email")
+	if err != nil {
+		return err
+	}
+	author := authorName + " <" + authorEmail + ">"
+
 	if bugfixRev != "" {
 		err = git.GitRun(gitDir, "branch", args[0], bugfixRev)
 		if err != nil {
 			return err
 		}
 		fmt.Printf("created bugfix topic branch %s based on %s\n", args[0], bugfixRev)
-		return nil
+		return topic.AppendTopic(config, args[0], bugfixRev, author,
+			[]string{bugfixRev})
 	}
 
 	basePoint, err := git.ReleaseTag(gitDir, config.BaseBranch)
@@ -109,7 +130,13 @@ func topicCreate(cmd *cobra.Command, args []string) error {
 		fmt.Printf(" and %d dependencies", len(dependencies))
 	}
 	fmt.Printf("\n")
-	return nil
+
+	newTopicHash, err := git.GitCommand(gitDir, "rev-parse", args[0])
+	if err != nil {
+		return err
+	}
+
+	return topic.AppendTopic(config, args[0], newTopicHash, author, dependencies)
 }
 
 func octopusMergeDependencies(gitDir string, basePoint string,
