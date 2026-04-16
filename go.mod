@@ -6,6 +6,7 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/spf13/cobra v1.10.2
 	gopkg.in/ini.v1 v1.67.1
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
