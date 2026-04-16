@@ -27,7 +27,7 @@ func TestLoadConfig_ExplicitFields(t *testing.T) {
 baseBranch = base
 sync = true
 syncRemote = upstream
-syncBranch = _meta
+metadataBranch = _meta
 `)
 
 	cfg, err := topic.LoadConfig()
@@ -44,15 +44,15 @@ syncBranch = _meta
 	if cfg.SyncRemote != "upstream" {
 		t.Errorf("SyncRemote: got %q, want %q", cfg.SyncRemote, "upstream")
 	}
-	if cfg.SyncBranch != "_meta" {
-		t.Errorf("SyncBranch: got %q, want %q", cfg.SyncBranch, "_meta")
+	if cfg.MetadataBranch != "_meta" {
+		t.Errorf("MetadataBranch: got %q, want %q", cfg.MetadataBranch, "_meta")
 	}
 }
 
 func TestLoadConfig_SyncDefaults(t *testing.T) {
 	dir := testutil.SetupRepo(t)
 	t.Chdir(dir)
-	// sync=true but no syncRemote/syncBranch; should fall back to defaults.
+	// sync=true but no syncRemote/metadataBranch; should fall back to defaults.
 	writeConfig(t, dir, `[topic]
 baseBranch = base
 sync = true
@@ -66,8 +66,9 @@ sync = true
 	if cfg.SyncRemote != "origin" {
 		t.Errorf("SyncRemote default: got %q, want origin", cfg.SyncRemote)
 	}
-	if cfg.SyncBranch != "_topic-metadata" {
-		t.Errorf("SyncBranch default: got %q, want _topic-metadata", cfg.SyncBranch)
+	if cfg.MetadataBranch != "_topic-metadata" {
+		t.Errorf("MetadataBranch default: got %q, want _topic-metadata",
+			cfg.MetadataBranch)
 	}
 }
 
