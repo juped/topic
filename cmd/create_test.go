@@ -7,6 +7,7 @@ import (
 
 	"go.topic.tools/topic/internal/testutil"
 	"go.topic.tools/topic/pkg/git"
+	"go.topic.tools/topic/pkg/topic"
 )
 
 // writeTopicConfig writes a minimal .git/topic/config for tests.
@@ -180,6 +181,44 @@ func TestTopicCreate_BugfixWithDepsDisallowed(t *testing.T) {
 	rootCmd.SetArgs([]string{"create", "my-bugfix", "--bugfix", headSHA, "--depends", "dep-a"})
 	if err := rootCmd.Execute(); err == nil {
 		t.Fatal("expected error when combining --bugfix and --depends")
+	}
+}
+
+func TestTopicCreate_CreatesMetadata(t *testing.T) {
+	dir := testutil.SetupRepo(t)
+	writeTopicConfig(t, dir)
+	t.Chdir(dir)
+	resetDependencies(t)
+
+	rootCmd.SetArgs([]string{"create", "my-feature"})
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	cfg, err := topic.LoadConfig()
+	if err != nil {
+		t.Fatalf("LoadConfig: %v", err)
+	}
+	metadata, err := topic.LoadMetadata(cfg)
+	if err != nil {
+		t.Fatalf("LoadMetadata: %v", err)
+	}
+
+	tm := topic.GetTopicByName(metadata, "my-feature")
+	if tm == nil {
+		t.Fatal("topic my-feature not found in metadata after create")
+	}
+
+	gitDir := filepath.Join(dir, ".git")
+	wantHash, err := git.GitCommand(gitDir, "rev-parse", "my-feature")
+	if err != nil {
+		t.Fatalf("rev-parse my-feature: %v", err)
+	}
+	if tm.Hash != wantHash {
+		t.Errorf("Hash: got %q, want %q", tm.Hash, wantHash)
+	}
+	if tm.Revision != 1 {
+		t.Errorf("Revision: got %d, want 1", tm.Revision)
 	}
 }
 
